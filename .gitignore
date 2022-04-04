@@ -162,7 +162,6 @@ cython_debug/
 *.pkl
 *.log 
 *.csv
-*.txt
 *.pickle
 *.png 
 *.jpg
