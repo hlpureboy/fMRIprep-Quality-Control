@@ -1,7 +1,7 @@
 '''
 Author: Yingjie Peng
 Date: 2022-04-04 13:14:56
-LastEditTime: 2022-04-04 14:25:02
+LastEditTime: 2022-04-04 17:41:01
 LastEditors: Yingjie Peng
 Description: Define by yourself
 FilePath: /QC/setup.py
@@ -24,7 +24,7 @@ setup(
     url='',
     license='',
     author='Yingjie Peng',
-    author_email='hlpureboy@gmai.com',
+    author_email='hlpureboy@gmail.com',
     description='',
     python_requires='>=3.6',
     # command_line
