@@ -1,8 +1,8 @@
 '''
 Author: Yingjie Peng
 Date: 2022-03-31 21:54:41
-LastEditTime: 2022-04-05 22:37:29
-LastEditors: Please set LastEditors
+LastEditTime: 2022-04-06 20:25:50
+LastEditors: Yingjie Peng
 Description: Define by yourself
 FilePath: /QC/qualc/func/func.py
 
@@ -23,11 +23,13 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class HeadMotionQC(object):
-    def __init__(self,head_motion_matrix:np.ndarray,fd_kind='normal') -> None:
+    def __init__(self,head_motion_matrix:np.ndarray,fd=None,fd_kind='normal') -> None:
         """init HeadMotion
 
         Args:
             head_motion_matrix (np.ndarray): head_motion_matrix
+
+            fd (np.ndarray, optional): Defaults to None.
             
             fd_kind(str): ['normal' or 'strict']  default strict
 
@@ -39,7 +41,10 @@ class HeadMotionQC(object):
         if fd_kind not in ['kind','strict']:
             raise ValueError("kind must be normal or strict")
         self.s = calculate_S(head_motion_matrix[:,0],head_motion_matrix[:,1],head_motion_matrix[:,2])
-        self.fd = calculate_FD(head_motion_matrix)
+        if fd is None:
+            self.fd = calculate_FD(head_motion_matrix)
+        else:
+            self.fd = fd
         self.fd_kind = fd_kind
 
     @property
@@ -121,8 +126,10 @@ class fMRIprepFuncRunQC(object):
             info.update(data)
             return info
         
-        head_motion_matrix = pd.read_csv(self.run_qc.func_tsv,sep='\t')[['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']].values
-        head_motion_qc = HeadMotionQC(head_motion_matrix,self.fd_kind)
+        df = pd.read_csv(self.run_qc.func_tsv,sep='\t')
+        head_motion_matrix = df[['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']].values
+        fd = df['framewise_displacement'].values
+        head_motion_qc = HeadMotionQC(head_motion_matrix,fd,self.fd_kind)
         info.update(head_motion_qc.features)
         return info
 
