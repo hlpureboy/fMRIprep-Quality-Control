@@ -1,8 +1,8 @@
 '''
 Author: Yingjie Peng
 Date: 2022-03-31 21:54:41
-LastEditTime: 2022-04-04 13:03:59
-LastEditors: Yingjie Peng
+LastEditTime: 2022-04-05 22:37:29
+LastEditors: Please set LastEditors
 Description: Define by yourself
 FilePath: /QC/qualc/func/func.py
 
@@ -23,19 +23,25 @@ import warnings
 warnings.filterwarnings('ignore')
 
 class HeadMotionQC(object):
-    def __init__(self,head_motion_matrix:np.ndarray) -> None:
+    def __init__(self,head_motion_matrix:np.ndarray,fd_kind='normal') -> None:
         """init HeadMotion
 
         Args:
             head_motion_matrix (np.ndarray): head_motion_matrix
+            
+            fd_kind(str): ['normal' or 'strict']  default strict
 
         Raises:
             ValueError: head motion shape is not (?,6)
         """
         if head_motion_matrix.shape[-1] != 6:
             raise ValueError("head motion shape is not (?,6)")
+        if fd_kind not in ['kind','strict']:
+            raise ValueError("kind must be normal or strict")
         self.s = calculate_S(head_motion_matrix[:,0],head_motion_matrix[:,1],head_motion_matrix[:,2])
         self.fd = calculate_FD(head_motion_matrix)
+        self.fd_kind = fd_kind
+
     @property
     def features(self):
         """get features 
@@ -43,9 +49,18 @@ class HeadMotionQC(object):
         Returns:
             dict : mean and max of s and fd
         """
-        return {'mean-s':self.s.mean(),'max-s':self.s.max(),'mean-fd':self.fd.mean(),
-                'max-fd':self.fd.max()
-                }
+        data = {'mean-s':self.s.mean(),'max-s':self.s.max(),'mean-fd':self.fd.mean(),
+                    'max-fd':self.fd.max()
+                    }
+        if self.fd_kind =='normal':
+            return  data
+        else:
+            # if kind =='strict' add fd>0.5mm or not the 20% fd >0.20 mm
+            data['fd>0.5mm'] = (self.fd>0.5).sum()
+
+            data['fd>0.2mm(%)'] = (self.fd>0.2).sum()/len(self.fd)
+            return data
+
 class FuncImageQC(object):
     def __init__(self,ref_path) -> None:
         """init 
@@ -70,13 +85,15 @@ class FuncImageQC(object):
         return {'pearson':pearson,'spearman':spearman}
 
 class fMRIprepFuncRunQC(object):
-    def __init__(self,run_qc:RunQC) -> None:
+    def __init__(self,run_qc:RunQC,fd_kind='normal') -> None:
         """init
             
             Args:
                 run_qc (RunQC): run_qc
+                fd_kind(str): normal or strict default normal
         """
         self.run_qc = run_qc
+        self.fd_kind = fd_kind
     
     @property
     def features(self):
@@ -97,21 +114,25 @@ class fMRIprepFuncRunQC(object):
         if len(self.run_qc.func_tsv)==0:
             logging.warning("{} not exists".format(self.run_qc.func_tsv))
             data = {'mean-s':np.nan,'max-s':np.nan,'mean-fd':np.nan,'max-fd':np.nan}
+            # add strict type
+            if self.fd_kind =='strict':
+                data['fd>0.5mm'] = np.nan
+                data['fd>0.2mm(%)'] = np.nan
             info.update(data)
             return info
         
         head_motion_matrix = pd.read_csv(self.run_qc.func_tsv,sep='\t')[['trans_x', 'trans_y', 'trans_z', 'rot_x', 'rot_y', 'rot_z']].values
-        head_motion_qc = HeadMotionQC(head_motion_matrix)
+        head_motion_qc = HeadMotionQC(head_motion_matrix,self.fd_kind)
         info.update(head_motion_qc.features)
         return info
 
 class fMRIprepFuncFeature(object):
-    def __init__(self,bids_qc:BIDSQC,n_process=40) -> None:
+    def __init__(self,bids_qc:BIDSQC,n_process=40,fd_kind='normal') -> None:
         self.bids_qc = bids_qc
         self.n_process = 40
-    
+        self.fd_kind = fd_kind
     def _parser_run_(self,run_qc:RunQC):
-        return fMRIprepFuncRunQC(run_qc).features
+        return fMRIprepFuncRunQC(run_qc,self.fd_kind).features
     
     @property
     def features(self):
