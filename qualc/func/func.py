@@ -1,7 +1,7 @@
 '''
 Author: Yingjie Peng
 Date: 2022-03-31 21:54:41
-LastEditTime: 2022-04-06 20:25:50
+LastEditTime: 2022-04-07 14:34:59
 LastEditors: Yingjie Peng
 Description: Define by yourself
 FilePath: /QC/qualc/func/func.py
@@ -38,7 +38,7 @@ class HeadMotionQC(object):
         """
         if head_motion_matrix.shape[-1] != 6:
             raise ValueError("head motion shape is not (?,6)")
-        if fd_kind not in ['kind','strict']:
+        if fd_kind not in ['normal','strict']:
             raise ValueError("kind must be normal or strict")
         self.s = calculate_S(head_motion_matrix[:,0],head_motion_matrix[:,1],head_motion_matrix[:,2])
         if fd is None:
