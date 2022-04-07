@@ -1,7 +1,7 @@
 '''
 Author: Yingjie Peng
 Date: 2022-03-31 21:54:41
-LastEditTime: 2022-04-07 14:34:59
+LastEditTime: 2022-04-07 14:39:18
 LastEditors: Yingjie Peng
 Description: Define by yourself
 FilePath: /QC/qualc/func/func.py
@@ -44,7 +44,9 @@ class HeadMotionQC(object):
         if fd is None:
             self.fd = calculate_FD(head_motion_matrix)
         else:
-            self.fd = fd
+            # nan replace with 0
+            self.fd = fd.copy()
+            self.fd[np.isnan(self.fd)] = 0
         self.fd_kind = fd_kind
 
     @property
